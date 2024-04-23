@@ -13,6 +13,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 @Configuration
 public class SecurityConfig {
@@ -20,35 +21,36 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+                .cors(AbstractHttpConfigurer::disable)
+                .csrf((csrf)-> csrf.ignoringRequestMatchers("/**"))
                 .authorizeHttpRequests(customizeRequest ->{
                     customizeRequest
                             .requestMatchers(HttpMethod.GET,"/api/pizzas/**").hasAnyRole("ADMIN","CUSTOMER")
                             .requestMatchers(HttpMethod.POST,"/api/pizzas/**").hasRole("ADMIN")
                             .requestMatchers(HttpMethod.PUT).hasRole("ADMIN")
+                            .requestMatchers("/api/orders/random").hasAuthority("random_order")
                             .requestMatchers("/api/orders/**").hasRole("ADMIN")
                             .anyRequest().authenticated();
                 })
-                .csrf(Customizer.withDefaults())
-                .cors(AbstractHttpConfigurer::disable)
                 .httpBasic(Customizer.withDefaults());
         return http.build();
     }
 
-    @Bean
-    public UserDetailsService memoryUsers(){
-        UserDetails admin = User.builder()
-                .username("admin")
-                .password(passwordEncoder().encode("admin"))
-                .roles("ADMIN")
-                .build();
-        UserDetails customer = User.builder()
-                .username("customer")
-                .password(passwordEncoder().encode("customer123"))
-                .roles("CUSTOMER")
-                .build();
-
-        return new InMemoryUserDetailsManager(admin,customer);
-    }
+//    @Bean
+//    public UserDetailsService memoryUsers(){
+//        UserDetails admin = User.builder()
+//                .username("admin")
+//                .password(passwordEncoder().encode("admin"))
+//                .roles("ADMIN")
+//                .build();
+//        UserDetails customer = User.builder()
+//                .username("customer")
+//                .password(passwordEncoder().encode("customer123"))
+//                .roles("CUSTOMER")
+//                .build();
+//
+//        return new InMemoryUserDetailsManager(admin,customer);
+//    }
 
     @Bean
     public PasswordEncoder passwordEncoder(){
